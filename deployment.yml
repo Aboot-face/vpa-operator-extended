@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vpa-extender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vpa-extender
+  template:
+    metadata:
+      labels:
+        app: vpa-extender
+    spec:
+      serviceAccountName: vpa-extender
+      containers:
+      - name: vpa-extender
+        image: image-registry.openshift-image-registry.svc:5000/my-operator-project/vpa-extender:v1
+        imagePullPolicy: Always

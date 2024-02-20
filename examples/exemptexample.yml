@@ -1,0 +1,7 @@
+---
+apiVersion: mydomain.org/v1
+kind: ExemptNamespace
+metadata:
+  name: example-exempt
+spec:
+  namespace: nginx2

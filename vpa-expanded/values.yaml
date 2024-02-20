@@ -1,0 +1,18 @@
+# Default values for vpa-expanded.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+namespace: vpa-extended
+
+app:
+  name: vpa-extended
+
+deployment:
+  replicas: 1
+
+image:
+  repository: image-registry.openshift-image-registry.svc:5000/my-operator-project
+  tag: v1
+  pullPolicy: Always
+
+domain: mydomain.com
+

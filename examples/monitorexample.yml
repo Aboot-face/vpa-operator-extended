@@ -1,0 +1,7 @@
+---
+apiVersion: mydomain.org/v1
+kind: NamespaceMonitor
+metadata:
+  name: example-monitor
+spec:
+  namespace: nginx2
