@@ -1,5 +1,5 @@
 ---
-apiVersion: mydomain.org/v1
+apiVersion: asalaboratory.com/v1
 kind: NamespaceMonitor
 metadata:
   name: example-monitor
