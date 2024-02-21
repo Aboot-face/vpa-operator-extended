@@ -1,6 +1,7 @@
-# Default values for vpa-expanded.
+# Default values for vpa-extended.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
+
 namespace: vpa-extended
 
 app:

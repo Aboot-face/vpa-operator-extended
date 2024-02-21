@@ -1,4 +1,5 @@
 import kopf
+import os
 import time
 import sys
 import kubernetes.client
@@ -46,11 +47,20 @@ def create_vpa(name, namespace):
     except ApiException as e:
         print(f"Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}")
 
-def check_vpa_installed(api_instance, vpa_crds, retries=3, delay=1):
-    vpa_installed = True
+def check_vpa_installed(api_instance, vpa_crds, retries=3, initial_delay=1):
+    """
+    Check if the specified VPA CRDs are installed.
+
+    Parameters:
+    - api_instance: An instance of the CustomObjectsApi from the Kubernetes client.
+    - vpa_crds: A list of VPA CRD names to check.
+    - retries: Maximum number of retries for checking each CRD.
+    - initial_delay: Initial delay between retries, doubled after each attempt.
+    """
     for crd_name in vpa_crds:
         attempt = 0
-        while attempt <= retries:
+        delay = initial_delay
+        while attempt < retries:
             try:
                 api_response = api_instance.read_custom_resource_definition(crd_name)
                 print(f"Found CRD: {crd_name}")
@@ -58,21 +68,14 @@ def check_vpa_installed(api_instance, vpa_crds, retries=3, delay=1):
             except ApiException as e:
                 if e.status == 404:
                     print(f"CRD {crd_name} not found. VPA operator might not be installed.")
-                    vpa_installed = False
-                    break  # No need to retry if CRD is not found
+                    if attempt == retries - 1:  # Last attempt
+                        print("Required VPA operator not found. Exiting...")
+                        sys.exit(1)
                 else:
-                    print(f"Attempt {attempt} failed: Error checking CRD {crd_name}: {e}")
-                    if attempt == retries:
-                        print("Max retries reached. Exiting...")
-                        vpa_installed = False
-                        break
-                    time.sleep(delay)
-                    delay *= 2  # Exponential backoff
-                    attempt += 1
-
-    if not vpa_installed:
-        print("Required VPA operator not found. Exiting to retry...")
-        sys.exit(1)
+                    print(f"Attempt {attempt + 1} failed: Error checking CRD {crd_name}: {e}")
+                time.sleep(delay)
+                delay *= 2  # Exponential backoff
+                attempt += 1
 
 @kopf.on.create('asalaboratory.com', 'v1', 'namespacemonitors')
 def on_namespace_monitor_create(spec, **kwargs):
@@ -159,6 +162,14 @@ def on_startup(**_):
     default_namespaces_file = 'default_namespaces'
     default_namespaces = set()
 
+    api_ext = kubernetes.client.ApiextensionsV1Api()
+
+    # Define the CRDs you want to check
+    vpa_crds = ['verticalpodautoscalers.autoscaling.k8s.io', 'verticalpodautoscalercheckpoints.autoscaling.k8s.io']
+
+    # Perform the check
+    check_vpa_installed(api_ext, vpa_crds)
+
     try:
         with open(default_namespaces_file, 'r') as file:
             for line in file:
@@ -182,6 +193,15 @@ def on_startup(**_):
 
         namespaces = v1.list_namespace().items
         initial_namespaces = {ns.metadata.name for ns in namespaces if ns.metadata.name not in default_namespaces}
+
+        # Get current namespace and add to exempt namespaces
+        oper_namespace = os.getenv('OPERATOR_NAMESPACE')
+        if (not namespace_monitors or oper_namespace in namespace_monitors) and (oper_namespace not in exempt_namespaces):
+            if oper_namespace:
+                exempt_namespaces.add(oper_namespace)
+                print(f"Operator's namespace {oper_namespace} added to exempt namespaces.")
+            else:
+                print("Operator's namespace could not be determined.")
 
         for namespace in initial_namespaces:
             if (not namespace_monitors or namespace in namespace_monitors) and (namespace not in exempt_namespaces):

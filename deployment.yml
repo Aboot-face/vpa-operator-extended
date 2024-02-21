@@ -16,4 +16,9 @@ spec:
       containers:
       - name: vpa-extender
         image: image-registry.openshift-image-registry.svc:5000/my-operator-project/vpa-extender:v1
+        env:
+          - name: OPERATOR_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         imagePullPolicy: Always

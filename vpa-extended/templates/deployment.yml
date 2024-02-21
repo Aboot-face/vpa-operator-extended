@@ -17,4 +17,9 @@ spec:
       containers:
       - name: {{ .Values.app.name }}
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        env:
+          - name: OPERATOR_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
         imagePullPolicy: {{ .Values.image.pullPolicy }}

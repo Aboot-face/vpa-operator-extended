@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "vpa-expanded.name" -}}
+{{- define "vpa-extended.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "vpa-expanded.fullname" -}}
+{{- define "vpa-extended.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "vpa-expanded.chart" -}}
+{{- define "vpa-extended.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "vpa-expanded.labels" -}}
-helm.sh/chart: {{ include "vpa-expanded.chart" . }}
-{{ include "vpa-expanded.selectorLabels" . }}
+{{- define "vpa-extended.labels" -}}
+helm.sh/chart: {{ include "vpa-extended.chart" . }}
+{{ include "vpa-extended.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,17 +45,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "vpa-expanded.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "vpa-expanded.name" . }}
+{{- define "vpa-extended.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "vpa-extended.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "vpa-expanded.serviceAccountName" -}}
+{{- define "vpa-extended.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "vpa-expanded.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "vpa-extended.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
