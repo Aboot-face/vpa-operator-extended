@@ -2,6 +2,6 @@
 apiVersion: asalaboratory.com/v1
 kind: ExemptNamespace
 metadata:
-  name: openshift-vertical-pod-autoscaler
+  name: exempt-example
 spec:
-  namespace: openshift-vertical-pod-autoscaler
+  namespace: nginx2
