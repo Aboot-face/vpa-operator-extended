@@ -155,7 +155,7 @@ def get_namespaces_from_crs(crs):
 
 @kopf.on.startup()
 def on_startup(**_):
-    config.load_incluster_config()  # Adjust this line as per your running environment
+    config.load_incluster_config()
     api_instance = kubernetes.client.CustomObjectsApi()
     v1 = kubernetes.client.CoreV1Api()
 
@@ -164,10 +164,8 @@ def on_startup(**_):
 
     api_ext = kubernetes.client.ApiextensionsV1Api()
 
-    # Define the CRDs you want to check
     vpa_crds = ['verticalpodautoscalers.autoscaling.k8s.io', 'verticalpodautoscalercheckpoints.autoscaling.k8s.io']
 
-    # Perform the check
     check_vpa_installed(api_ext, vpa_crds)
 
     try:
