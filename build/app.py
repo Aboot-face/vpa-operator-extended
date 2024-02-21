@@ -74,28 +74,28 @@ def check_vpa_installed(api_instance, vpa_crds, retries=3, delay=1):
         print("Required VPA operator not found. Exiting to retry...")
         sys.exit(1)
 
-@kopf.on.create('mydomain.org', 'v1', 'namespacemonitors')
+@kopf.on.create('asalaboratory.com', 'v1', 'namespacemonitors')
 def on_namespace_monitor_create(spec, **kwargs):
     namespace = spec.get('namespace')
     if namespace:
         namespace_monitors.add(namespace)
         print(f"Added {namespace} to monitored namespaces.")
 
-@kopf.on.delete('mydomain.org', 'v1', 'namespacemonitors')
+@kopf.on.delete('asalaboratory.com', 'v1', 'namespacemonitors')
 def on_namespace_monitor_delete(spec, **kwargs):
     namespace = spec.get('namespace')
     if namespace in namespace_monitors:
         namespace_monitors.remove(namespace)
         print(f"Removed {namespace} from monitored namespaces.")
 
-@kopf.on.create('mydomain.org', 'v1', 'exemptnamespaces')
+@kopf.on.create('asalaboratory.com', 'v1', 'exemptnamespaces')
 def on_exempt_namespace_create(spec, **kwargs):
     namespace = spec.get('namespace')
     if namespace:
         exempt_namespaces.add(namespace)
         print(f"Added {namespace} to exempt namespaces.")
 
-@kopf.on.delete('mydomain.org', 'v1', 'exemptnamespaces')
+@kopf.on.delete('asalaboratory.com', 'v1', 'exemptnamespaces')
 def on_exempt_namespace_delete(spec, **kwargs):
     namespace = spec.get('namespace')
     if namespace in exempt_namespaces:
@@ -171,8 +171,8 @@ def on_startup(**_):
     print(f"Excluded namespaces: {default_namespaces}")
 
     try:
-        namespace_monitor_crs = api_instance.list_cluster_custom_object(group="mydomain.org", version="v1", plural="namespacemonitors")
-        exempt_namespace_crs = api_instance.list_cluster_custom_object(group="mydomain.org", version="v1", plural="exemptnamespaces")
+        namespace_monitor_crs = api_instance.list_cluster_custom_object(group="asalaboratory.com", version="v1", plural="namespacemonitors")
+        exempt_namespace_crs = api_instance.list_cluster_custom_object(group="asalaboratory.com", version="v1", plural="exemptnamespaces")
         
         namespace_monitors = get_namespaces_from_crs(namespace_monitor_crs)
         exempt_namespaces = get_namespaces_from_crs(exempt_namespace_crs)

@@ -10,9 +10,9 @@ deployment:
   replicas: 1
 
 image:
-  repository: image-registry.openshift-image-registry.svc:5000/my-operator-project
+  repository: abootface/vpa-operator-extended
   tag: v1
   pullPolicy: Always
 
-domain: mydomain.com
+domain: asalaboratory.com
 

@@ -2,9 +2,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: namespacemonitors.mydomain.org
+  name: namespacemonitors.asalaboratory.com
 spec:
-  group: mydomain.org
+  group: asalaboratory.com
   names:
     kind: NamespaceMonitor
     listKind: NamespaceMonitorList

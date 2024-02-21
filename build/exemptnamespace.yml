@@ -2,9 +2,9 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: exemptnamespaces.mydomain.org
+  name: exemptnamespaces.asalaboratory.com
 spec:
-  group: mydomain.org
+  group: asalaboratory.com
   names:
     kind: ExemptNamespace
     listKind: ExemptNamespaceList
