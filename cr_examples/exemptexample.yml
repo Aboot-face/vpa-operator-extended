@@ -1,4 +1,3 @@
----
 apiVersion: asalaboratory.com/v1
 kind: ExemptNamespace
 metadata:

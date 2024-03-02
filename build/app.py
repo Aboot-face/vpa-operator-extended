@@ -10,9 +10,25 @@ from kubernetes.client.rest import ApiException
 namespace_monitors = set()
 exempt_namespaces = set()
 
-def create_vpa(name, namespace):
+def trigger_rollout(name, namespace):
     """
-    Creates a VPA for a given deployment.
+    Triggers a rollout of a deployment by updating an annotation.
+    """
+    apps_v1_api = kubernetes.client.AppsV1Api()
+    deployment = apps_v1_api.read_namespaced_deployment(name, namespace)
+    if 'annotations' not in deployment.spec.template.metadata:
+        deployment.spec.template.metadata.annotations = {}
+    # Use a timestamp or a counter for the annotation value to ensure it changes.
+    deployment.spec.template.metadata.annotations['vpa-update-timestamp'] = str(time.time())
+    try:
+        apps_v1_api.patch_namespaced_deployment(name, namespace, deployment)
+        print(f"Triggered rollout for deployment {name} in namespace {namespace}.")
+    except ApiException as e:
+        print(f"Exception when calling AppsV1Api->patch_namespaced_deployment: {e}")
+
+def create_vpa(name, namespace, update_mode):
+    """
+    Creates or updates a VPA with the specified update mode.
     """
     vpa_api = kubernetes.client.CustomObjectsApi()
     vpa_body = {
@@ -29,23 +45,55 @@ def create_vpa(name, namespace):
                 "name": name
             },
             "updatePolicy": {
-                "updateMode": "Auto"
+                "updateMode": update_mode
             }
         }
     }
-
+    # Try to update an existing VPA, if it doesn't exist, create a new one.
     try:
-        # Create VPA
-        vpa_api.create_namespaced_custom_object(
+        vpa_api.patch_namespaced_custom_object(
             group="autoscaling.k8s.io",
             version="v1",
             namespace=namespace,
             plural="verticalpodautoscalers",
+            name=name,
             body=vpa_body,
         )
-        print(f"VPA created for deployment {name} in namespace {namespace}.")
+        print(f"VPA updated for deployment {name} in namespace {namespace}.")
     except ApiException as e:
-        print(f"Exception when calling CustomObjectsApi->create_namespaced_custom_object: {e}")
+        if e.status == 404:  # VPA doesn't exist, try creating it
+            try:
+                vpa_api.create_namespaced_custom_object(
+                    group="autoscaling.k8s.io",
+                    version="v1",
+                    namespace=namespace,
+                    plural="verticalpodautoscalers",
+                    body=vpa_body,
+                )
+                print(f"VPA created for deployment {name} in namespace {namespace}.")
+            except ApiException as e:
+                print(f"Exception when creating VPA: {e}")
+        else:
+            print(f"Exception when updating VPA: {e}")
+
+def get_rollout_strategy(namespace, deployment_name):
+    """
+    Retrieves the rollout strategy for the specified namespace and deployment.
+    """
+    custom_objects_api = kubernetes.client.CustomObjectsApi()
+    try:
+        rollout_strategies = custom_objects_api.list_namespaced_custom_object(
+            group="asalaboratory.com",
+            version="v1",
+            namespace=namespace,
+            plural="rolloutstrategies"
+        )
+        for strategy in rollout_strategies.get("items", []):
+            if strategy.get("spec", {}).get("target") == deployment_name or not strategy.get("spec", {}).get("target"):
+                return strategy.get("spec", {}).get("strategy")
+    except ApiException as e:
+        print(f"Failed to retrieve rollout strategies: {e}")
+    return None  # Return None if no specific strategy is found
 
 def check_vpa_installed(api_instance, vpa_crds, retries=3, initial_delay=1):
     """
@@ -110,7 +158,9 @@ def on_deployment_create(namespace, name, spec, **kwargs):
     # Check if namespace is monitored and not exempt
     if (not namespace_monitors or namespace in namespace_monitors) and (namespace not in exempt_namespaces):
         print(f"Deployment created in monitored namespace: {namespace}. Creating VPA...")
-        create_vpa(name, namespace)
+        strategy = get_rollout_strategy(namespace, name) or "Auto"  # Default to Auto if not specified
+        create_vpa(name, namespace, strategy)
+        trigger_rollout(name, namespace)
     else:
         print(f"Namespace {namespace} is exempt or not monitored. Ignoring deployment.")
 
@@ -187,7 +237,13 @@ def on_startup(**_):
         exempt_namespaces = get_namespaces_from_crs(exempt_namespace_crs)
 
         print(f"Monitored Namespaces: {namespace_monitors}")
-        print(f"Exempt Namespaces: {exempt_namespaces}")
+
+        for namespace in default_namespaces():
+            if namespace:
+                print(f"Operator's namespace {oper_namespace} added to exempt namespaces.")
+                exempt_namespaces.add(namespace)
+            else:
+                print("Operator's namespace could not be determined.")
 
         namespaces = v1.list_namespace().items
         initial_namespaces = {ns.metadata.name for ns in namespaces if ns.metadata.name not in default_namespaces}
@@ -206,6 +262,8 @@ def on_startup(**_):
                 print(f"Namespace {namespace} will be monitored.")
             else:
                 print(f"Namespace {namespace} is exempt or not selected for monitoring.")
+        
+        print(f"Final Default Exempt Namespaces: {exempt_namespaces}")
 
     except ApiException as e:
         if e.status == 503:

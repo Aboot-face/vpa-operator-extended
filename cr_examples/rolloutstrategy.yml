@@ -1,0 +1,8 @@
+apiVersion: asalaboratory.com/v1
+kind: RolloutStrategy
+metadata:
+  name: special-deployment-strategy
+  namespace: example-namespace
+spec:
+  strategy: Auto
+  target: my-special-deployment
